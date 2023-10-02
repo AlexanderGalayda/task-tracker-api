@@ -1,0 +1,13 @@
+---
+server:
+  port: 9090
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost/task-tracker
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
