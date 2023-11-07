@@ -6,10 +6,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.example.api.controllers.helpers.ControllerHelper;
 import org.example.api.dto.AckDto;
 import org.example.api.dto.ProjectDto;
 import org.example.api.exceptions.BadRequestException;
-import org.example.api.exceptions.NotFoundException;
 import org.example.api.factories.ProjectDtoFactory;
 import org.example.store.entities.ProjectEntity;
 import org.example.store.repositories.ProjectRepository;
@@ -27,7 +27,10 @@ import org.springframework.web.bind.annotation.RestController;
 public class ProjectController {
 
   private final ProjectDtoFactory projectDtoFactory;
+
   private final ProjectRepository projectRepository;
+
+  private final ControllerHelper controllerHelper;
 
   public static final String FETCH_PROJECT = "/api/projects";
   public static final String CREATE_PROJECT = "/api/projects";
@@ -43,7 +46,7 @@ public class ProjectController {
 
     Stream<ProjectEntity> projectStream = optionalPrefixName
         .map(projectRepository::streamAllByNameStartsWithIgnoreCase)
-        .orElseGet(projectRepository::streamAll);
+        .orElseGet(projectRepository::streamAllBy);
 
     return projectStream
         .map(projectDtoFactory::makeProjectDto)
@@ -59,7 +62,7 @@ public class ProjectController {
     projectRepository
         .findByName(name)
         .ifPresent(project -> {
-          throw new BadRequestException(String.format("Project \"%s\" already exist", name));
+          throw new BadRequestException(String.format("Project \"%s\" already exists", name));
         });
 
     ProjectEntity project = projectRepository.saveAndFlush(
@@ -78,13 +81,13 @@ public class ProjectController {
     if (name.trim().isEmpty()) {
       throw new BadRequestException("Name cannot be empty");
     }
-    ProjectEntity project = getProjectOrThrowException(projectId);
+    ProjectEntity project = controllerHelper.getProjectOrThrowException(projectId);
 
     projectRepository
         .findByName(name)
         .filter(anotherProject -> !anotherProject.getId().equals(projectId))
         .ifPresent(projectEntity -> {
-          throw new BadRequestException(String.format("Project \"%s\" already exist", name));
+          throw new BadRequestException(String.format("Project \"%s\" already exists", name));
         });
 
     project.setName(name);
@@ -96,17 +99,10 @@ public class ProjectController {
   @DeleteMapping(DELETE_PROJECT)
   public AckDto deleteProject(@PathVariable("project_id") Long projectId) {
 
-    getProjectOrThrowException(projectId);
+    controllerHelper.getProjectOrThrowException(projectId);
 
     projectRepository.deleteById(projectId);
 
     return AckDto.makeDefault(true);
-  }
-
-  private ProjectEntity getProjectOrThrowException(Long projectId) {
-    return projectRepository
-        .findById(projectId)
-        .orElseThrow(() -> new NotFoundException(
-            String.format("Project with \"%s\" doesn't exist", projectId)));
   }
 }
