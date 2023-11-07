@@ -1,1 +1,1 @@
-Task tracker app with Gradle, PostgreSQL on docker and without services(it is in the controller and experimental).
+Task tracker API with Gradle, PostgreSQL on docker and without services(it is in the controller and experimental).
